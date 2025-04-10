@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        font-src 'self';
+        connect-src 'self';
+        img-src 'self' data:;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+    ">
+    <title>Keyspire (Beta) - Seu Cofre, Suas Regras</title>
+    <link rel="stylesheet" href="keyspire.css">
+</head>
+<body>
+    <header>
+        <button id="menu-toggle" aria-label="Abrir menu">☰</button>
+        <h1 id="current-tab">Cofre</h1>
+        <button id="theme-toggle" aria-label="Alternar tema">🌙</button>
+        <button id="lock-btn" class="hidden" aria-label="Bloquear cofre">🔒</button>
+    </header>
+    <div id="sidebar" class="sidebar">
+        <div class="menu-item" data-tab="vault">Cofre</div>
+        <div class="menu-item" data-tab="trash">Lixeira</div>
+        <div class="menu-item" data-tab="settings">Configurações</div>
+    </div>
+    <main>
+        <section id="auth-section"></section>
+        <section id="vault-content" class="hidden">
+            <div id="vault-tab" class="tab-content"></div>
+            <div id="trash-tab" class="tab-content hidden"></div>
+            <div id="settings-tab" class="tab-content hidden"></div>
+        </section>
+    </main>
+    <script src="keyspire.js"></script>
+</body>
+</html>
