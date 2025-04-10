@@ -1,77 +1,81 @@
 # Configurações gerais do Netlify
 [build]
-  publish = "dist" # Diretório de saída do build (ajuste conforme seu projeto)
-  command = "npm run build" # Comando de build (ajuste conforme seu setup)
+  publish = "public" # Diretório com index.html, keyspire.js e keyspire.css
+  # command = "npm run build" # Removido, pois é estático; ajuste se usar build
 
 # Configuração global para todas as rotas
 [[headers]]
   for = "/*" # Aplica a todas as páginas
   [headers.values]
-    # Força HTTPS com HSTS (2 anos)
+    # Força HTTPS com HSTS (2 anos, com preload)
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     
-    # Política de segurança de conteúdo (CSP) com suporte a scripts inline via nonce
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'nonce-randomNonceHere' 'strict-dynamic'; style-src 'self' 'nonce-randomNonceHere'; img-src 'self' data:; font-src 'self'; object-src 'none'; media-src 'none'; child-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; block-all-mixed-content; upgrade-insecure-requests; require-sri-for=script style;"
+    # Política de Segurança de Conteúdo (CSP)
+    # Sem 'unsafe-inline', apenas fontes seguras
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; media-src 'none'; frame-src 'none'; child-src 'none'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; block-all-mixed-content; upgrade-insecure-requests;"
     
-    # Impede que o site seja exibido em iframes
+    # X-Frame-Options para proteção contra clickjacking
     X-Frame-Options = "DENY"
     
-    # Previne MIME type sniffing
+    # X-Content-Type-Options para evitar MIME-sniffing
     X-Content-Type-Options = "nosniff"
     
-    # Remove informações de referência para máxima privacidade
+    # Política de Referência para privacidade
     Referrer-Policy = "no-referrer"
     
-    # Define permissões restritivas, permitindo apenas APIs necessárias
-    Permissions-Policy = "geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=(), usb=(), accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), clipboard-read=(self), clipboard-write=(self), gamepad=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), storage-access=(), web-share=(), xr-spatial-tracking=()"
+    # Política de Permissões restritiva
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), clipboard-read=(self), clipboard-write=(self), fullscreen=(self), gamepad=(), gyroscope=(), magnetometer=(), midi=(), notifications=(), push=(), speaker=(), sync-xhr=(), vibrate=(), web-share=()"
     
-    # Configura cookies com segurança máxima
-    Set-Cookie = "Secure; HttpOnly; SameSite=Strict"
+    # Política de Recursos de Origem Cruzada (CORP)
+    Cross-Origin-Resource-Policy = "same-origin"
+    
+    # Políticas adicionais de origem cruzada
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin"
     
     # Desativa cache para dados sensíveis
     Cache-Control = "no-store, no-cache, must-revalidate, private"
     Pragma = "no-cache"
     Expires = "0"
     
-    # Suporta Certificate Transparency
+    # Suporte a Certificate Transparency
     Expect-CT = "max-age=86400, enforce, report-uri='https://keyspirezmdsec.report-uri.com/r/d/ct/enforce'"
     
-    # Desativa prefetch de DNS para evitar ataques de rebinding
+    # Desativa prefetch de DNS
     X-DNS-Prefetch-Control = "off"
     
-    # Remove cabeçalhos que vazam informações do servidor
+    # Remove informações do servidor
     Server = ""
     X-Powered-By = ""
     
-    # Protege contra ataques de Cross-Origin
-    Cross-Origin-Embedder-Policy = "require-corp"
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Resource-Policy = "same-origin"
-    
-    # Garante integridade de recursos (SRI)
-    Feature-Policy = "document-domain 'none'" # Depreciado, mas incluído para compatibilidade
-    
-    # Proteção contra XSS (embora menos relevante em navegadores modernos)
+    # Proteção contra XSS (compatibilidade)
     X-XSS-Protection = "1; mode=block"
 
-# Configuração específica para recursos estáticos
+# Configuração específica para tipos de arquivo
 [[headers]]
-  for = "/*.html"
+  for = "/index.html"
   [headers.values]
     Content-Type = "text/html; charset=UTF-8"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Cross-Origin-Resource-Policy = "same-origin"
 
 [[headers]]
-  for = "/*.js"
+  for = "/keyspire.js"
   [headers.values]
     Content-Type = "application/javascript; charset=UTF-8"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
+    X-Content-Type-Options = "nosniff"
+    Cross-Origin-Resource-Policy = "same-origin"
 
 [[headers]]
-  for = "/*.css"
+  for = "/keyspire.css"
   [headers.values]
     Content-Type = "text/css; charset=UTF-8"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
+    X-Content-Type-Options = "nosniff"
+    Cross-Origin-Resource-Policy = "same-origin"
 
 [[headers]]
   for = "/*.json|/*.toml|/*.env"
@@ -80,10 +84,6 @@
     Access-Control-Allow-Origin = "none"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
 
-# Força HTTPS no nível de infraestrutura
-[https]
-  force = true
-
 # Redirecionamentos para HTTPS
 [[redirects]]
   from = "http://keyspirezmdsec.netlify.app/*"
@@ -91,14 +91,9 @@
   status = 301
   force = true
 
-# Redirecionamento para página principal (se aplicável)
+# Suporte a SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = { "Role" = "anonymous" } # Garante que funcione para usuários não autenticados
-
-# Configuração de funções serverless (opcional, para injetar nonce dinamicamente)
-[functions]
-  directory = "functions"
-  node_bundler = "esbuild"
+  conditions = { "Role" = "anonymous" }
