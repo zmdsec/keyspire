@@ -1,40 +1,46 @@
 # Configuração do build (ajustável conforme o framework usado)
 [build]
   publish = "dist" # Diretório de saída (ex.: "dist" para Vite/React, "public" para outros)
-  command = "npm run build" # Comando de build, ajuste se necessário (ex.: "yarn build")
+  command = "npm run build" # Comando de build, ajuste se necessário
 
-# Configuração de cabeçalhos para segurança máxima
+# Configuração de cabeçalhos para todas as rotas
 [[headers]]
-  for = "/*" # Aplica a todas as rotas
+  for = "/*" # Aplica a todas as páginas
   [headers.values]
-    # Segurança contra clickjacking
-    X-Frame-Options = "DENY"
+    # Política de Segurança de Conteúdo (Content-Security-Policy)
+    # Protege contra XSS permitindo apenas fontes confiáveis
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self';"
     
-    # Evita MIME type sniffing
+    # X-Frame-Options
+    # Protege contra clickjacking permitindo apenas enquadramento pelo mesmo origem
+    X-Frame-Options = "SAMEORIGIN"
+    
+    # X-Content-Type-Options
+    # Impede MIME-sniffing, forçando o tipo de conteúdo declarado
     X-Content-Type-Options = "nosniff"
     
-    # Política de segurança de conteúdo robusta
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self';"
-    
-    # Controle de informações no Referer
+    # Política de Referência (Referrer-Policy)
+    # Controla informações enviadas no cabeçalho Referer
     Referrer-Policy = "strict-origin-when-cross-origin"
     
-    # HSTS (força HTTPS por 1 ano, incluindo subdomínios)
+    # Política de Permissões (Permissions-Policy)
+    # Restringe acesso a recursos sensíveis do navegador
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+    
+    # HSTS (adicional para forçar HTTPS)
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     
-    # Proteção contra vazamento de dados em cabeçalhos
-    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
-    
-    # Cache mínimo para páginas dinâmicas (ajuste para assets estáticos abaixo)
+    # Cache para páginas dinâmicas
     Cache-Control = "no-store, no-cache, must-revalidate"
 
-# Configuração específica para arquivos estáticos (ex.: JS, CSS, imagens)
+# Configuração específica para arquivos estáticos
 [[headers]]
-  for = "/assets/*" # Aplica apenas a arquivos na pasta /assets (ajuste conforme sua estrutura)
+  for = "/assets/*" # Aplica a arquivos estáticos (ajuste o caminho conforme sua estrutura)
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable" # Cache de 1 ano para arquivos estáticos
+    Cache-Control = "public, max-age=31536000, immutable" # Cache de 1 ano para arquivos imutáveis
+    X-Content-Type-Options = "nosniff" # Mantém segurança em assets
 
-# Redirecionamentos (opcional, para garantir HTTPS)
+# Redirecionamento para HTTPS
 [[redirects]]
   from = "http://keyspirezmdsec.netlify.app/*"
   to = "https://keyspirezmdsec.netlify.app/:splat"
