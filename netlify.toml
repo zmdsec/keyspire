@@ -1,18 +1,18 @@
-# Configuração do build (ajustável conforme o framework usado)
+# Configuração do build
 [build]
-  publish = "dist" # Diretório de saída (ex.: "dist" para Vite/React, "public" para outros)
-  command = "npm run build" # Comando de build, ajuste se necessário
+  publish = "dist"  # Ajuste para o diretório de saída do seu projeto (ex.: "build", "public")
+  command = "npm run build"  # Ajuste para o comando de build do seu projeto (ex.: "yarn build")
 
 # Configuração de cabeçalhos para todas as rotas
 [[headers]]
-  for = "/*" # Aplica a todas as páginas
+  for = "/*"  # Aplica a todas as páginas do site
   [headers.values]
     # Política de Segurança de Conteúdo (Content-Security-Policy)
-    # Protege contra XSS permitindo apenas fontes confiáveis
+    # Protege contra XSS, permitindo apenas recursos confiáveis
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self';"
     
     # X-Frame-Options
-    # Protege contra clickjacking permitindo apenas enquadramento pelo mesmo origem
+    # Protege contra clickjacking, permitindo enquadramento apenas pelo mesmo origem
     X-Frame-Options = "SAMEORIGIN"
     
     # X-Content-Type-Options
@@ -27,22 +27,31 @@
     # Restringe acesso a recursos sensíveis do navegador
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
     
-    # HSTS (adicional para forçar HTTPS)
+    # HSTS (força HTTPS por 1 ano, incluindo subdomínios)
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     
-    # Cache para páginas dinâmicas
-    Cache-Control = "no-store, no-cache, must-revalidate"
+    # Sem cache para páginas dinâmicas (essencial para dados sensíveis)
+    Cache-Control = "no-store, no-cache, must-revalidate, private"
 
-# Configuração específica para arquivos estáticos
+# Configuração de cabeçalhos para arquivos estáticos
 [[headers]]
-  for = "/assets/*" # Aplica a arquivos estáticos (ajuste o caminho conforme sua estrutura)
+  for = "/assets/*"  # Ajuste para o caminho dos seus arquivos estáticos (ex.: "/static/*", "/js/*")
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable" # Cache de 1 ano para arquivos imutáveis
-    X-Content-Type-Options = "nosniff" # Mantém segurança em assets
+    # Cache longo para arquivos imutáveis
+    Cache-Control = "public, max-age=31536000, immutable"
+    # Mantém segurança em assets
+    X-Content-Type-Options = "nosniff"
 
-# Redirecionamento para HTTPS
+# Redirecionamento para garantir HTTPS
 [[redirects]]
   from = "http://keyspirezmdsec.netlify.app/*"
   to = "https://keyspirezmdsec.netlify.app/:splat"
   status = 301
   force = true
+
+# Redirecionamento opcional para raiz (se necessário)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
