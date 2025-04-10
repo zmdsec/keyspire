@@ -1,57 +1,27 @@
-# Configurações gerais do Netlify
 [build]
-  publish = "public" # Diretório com index.html, keyspire.js e keyspire.css
-  # command = "npm run build" # Removido, pois é estático; ajuste se usar build
+  publish = "public" # Ajuste para "." se os arquivos estão na raiz
 
-# Configuração global para todas as rotas
 [[headers]]
-  for = "/*" # Aplica a todas as páginas
+  for = "/*"
   [headers.values]
-    # Força HTTPS com HSTS (2 anos, com preload)
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    
-    # Política de Segurança de Conteúdo (CSP)
-    # Sem 'unsafe-inline', apenas fontes seguras
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; media-src 'none'; frame-src 'none'; child-src 'none'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; block-all-mixed-content; upgrade-insecure-requests;"
-    
-    # X-Frame-Options para proteção contra clickjacking
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' 'data:image/*'; font-src 'self'; object-src 'none'; media-src 'none'; frame-src 'none'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; block-all-mixed-content; upgrade-insecure-requests;"
     X-Frame-Options = "DENY"
-    
-    # X-Content-Type-Options para evitar MIME-sniffing
     X-Content-Type-Options = "nosniff"
-    
-    # Política de Referência para privacidade
     Referrer-Policy = "no-referrer"
-    
-    # Política de Permissões restritiva
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), clipboard-read=(self), clipboard-write=(self), fullscreen=(self), gamepad=(), gyroscope=(), magnetometer=(), midi=(), notifications=(), push=(), speaker=(), sync-xhr=(), vibrate=(), web-share=()"
-    
-    # Política de Recursos de Origem Cruzada (CORP)
     Cross-Origin-Resource-Policy = "same-origin"
-    
-    # Políticas adicionais de origem cruzada
     Cross-Origin-Embedder-Policy = "require-corp"
     Cross-Origin-Opener-Policy = "same-origin"
-    
-    # Desativa cache para dados sensíveis
     Cache-Control = "no-store, no-cache, must-revalidate, private"
     Pragma = "no-cache"
     Expires = "0"
-    
-    # Suporte a Certificate Transparency
     Expect-CT = "max-age=86400, enforce, report-uri='https://keyspirezmdsec.report-uri.com/r/d/ct/enforce'"
-    
-    # Desativa prefetch de DNS
     X-DNS-Prefetch-Control = "off"
-    
-    # Remove informações do servidor
     Server = ""
     X-Powered-By = ""
-    
-    # Proteção contra XSS (compatibilidade)
     X-XSS-Protection = "1; mode=block"
 
-# Configuração específica para tipos de arquivo
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -84,14 +54,12 @@
     Access-Control-Allow-Origin = "none"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
 
-# Redirecionamentos para HTTPS
 [[redirects]]
   from = "http://keyspirezmdsec.netlify.app/*"
   to = "https://keyspirezmdsec.netlify.app/:splat"
   status = 301
   force = true
 
-# Suporte a SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
