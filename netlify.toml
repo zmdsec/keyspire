@@ -1,0 +1,42 @@
+# Configuração do build (ajustável conforme o framework usado)
+[build]
+  publish = "dist" # Diretório de saída (ex.: "dist" para Vite/React, "public" para outros)
+  command = "npm run build" # Comando de build, ajuste se necessário (ex.: "yarn build")
+
+# Configuração de cabeçalhos para segurança máxima
+[[headers]]
+  for = "/*" # Aplica a todas as rotas
+  [headers.values]
+    # Segurança contra clickjacking
+    X-Frame-Options = "DENY"
+    
+    # Evita MIME type sniffing
+    X-Content-Type-Options = "nosniff"
+    
+    # Política de segurança de conteúdo robusta
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self';"
+    
+    # Controle de informações no Referer
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # HSTS (força HTTPS por 1 ano, incluindo subdomínios)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    
+    # Proteção contra vazamento de dados em cabeçalhos
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    
+    # Cache mínimo para páginas dinâmicas (ajuste para assets estáticos abaixo)
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+# Configuração específica para arquivos estáticos (ex.: JS, CSS, imagens)
+[[headers]]
+  for = "/assets/*" # Aplica apenas a arquivos na pasta /assets (ajuste conforme sua estrutura)
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable" # Cache de 1 ano para arquivos estáticos
+
+# Redirecionamentos (opcional, para garantir HTTPS)
+[[redirects]]
+  from = "http://keyspirezmdsec.netlify.app/*"
+  to = "https://keyspirezmdsec.netlify.app/:splat"
+  status = 301
+  force = true
