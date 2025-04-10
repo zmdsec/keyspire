@@ -214,10 +214,10 @@ class KeyspireDB {
     }
 }
 
-// Módulo de Geração de QR Code (Suporte a Type 10)
+// Módulo de Geração de QR Code
 class QRCodeGenerator {
     constructor() {
-        this.typeNumber = 10; // Suporta até ~174 caracteres com correção H
+        this.typeNumber = 4;
         this.errorCorrectionLevel = 'H';
     }
 
@@ -237,7 +237,7 @@ class QRCodeGenerator {
     }
 
     calculateSize(dataLength) {
-        return 57; // Tamanho para Type 10 com correção H
+        return 33;
     }
 
     addData(qr, text) {
@@ -419,27 +419,28 @@ class Keyspire {
             await this.sync.cleanExpiredSyncs();
             const config = await this.db.get('config', 'auth');
             this.state.isAccountCreated = !!config;
-            this.loadTheme();
+            KeyspireLogger.info("Inicialização concluída", { isAccountCreated: this.state.isAccountCreated });
             this.renderUI();
-            this.attachListeners();
-            KeyspireLogger.info("Aplicativo Keyspire inicializado (Beta)");
+            setTimeout(() => {
+                this.loadTheme();
+                this.attachListeners();
+            }, 100); // Atraso para garantir que o DOM esteja pronto
         } catch (e) {
+            KeyspireLogger.error("Erro ao iniciar o Keyspire", { message: e.message });
             this.showNotification("Erro ao iniciar o Keyspire: " + e.message, "error");
         }
     }
 
     loadTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-        } else {
-            document.body.classList.remove('dark-theme');
-        }
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.classList.toggle('dark-theme', savedTheme === 'dark');
         const toggle = document.getElementById('theme-toggle');
         if (toggle) {
-            toggle.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+            toggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            KeyspireLogger.info(`Tema carregado: ${savedTheme}`, { hasDarkTheme: document.body.classList.contains('dark-theme') });
+        } else {
+            KeyspireLogger.warn("Botão theme-toggle não encontrado ao carregar tema");
         }
-        KeyspireLogger.info("Tema carregado: " + (savedTheme || 'claro'));
     }
 
     toggleTheme() {
@@ -449,21 +450,33 @@ class Keyspire {
         const toggle = document.getElementById('theme-toggle');
         if (toggle) {
             toggle.textContent = isDark ? '☀️' : '🌙';
+            KeyspireLogger.info(`Tema alterado para: ${isDark ? 'escuro' : 'claro'}`, { hasDarkTheme: isDark });
+        } else {
+            KeyspireLogger.warn("Botão theme-toggle não encontrado ao alternar tema");
         }
-        KeyspireLogger.info(`Tema alternado para ${isDark ? 'escuro' : 'claro'}`);
     }
 
     renderUI() {
         const authSection = document.getElementById('auth-section');
         const vaultContent = document.getElementById('vault-content');
-        if (!authSection || !vaultContent) {
-            KeyspireLogger.error("Seções principais não encontradas");
+        const lockBtn = document.getElementById('lock-btn');
+        const sidebar = document.getElementById('sidebar');
+
+        if (!authSection || !vaultContent || !lockBtn || !sidebar) {
+            KeyspireLogger.error("Elementos principais da UI não encontrados", {
+                authSection: !!authSection,
+                vaultContent: !!vaultContent,
+                lockBtn: !!lockBtn,
+                sidebar: !!sidebar
+            });
             return;
         }
 
         if (this.state.isLocked) {
             authSection.classList.remove('hidden');
             vaultContent.classList.add('hidden');
+            lockBtn.classList.add('hidden');
+            sidebar.classList.remove('open');
             authSection.innerHTML = this.state.isAccountCreated ? `
                 <h1><span aria-hidden="true">🔒</span> ${sanitizeHTML("Keyspire (Beta) - Entrar")}</h1>
                 <div class="password-field">
@@ -485,27 +498,66 @@ class Keyspire {
                 <p class="beta-notice">Versão Beta: Seus dados são locais e seguros.</p>
                 <p class="donation">Gostou? Considere uma doação: ${KEYSPIRE_CONFIG.donationAddress}</p>
             `;
+            KeyspireLogger.info("UI renderizada: tela de autenticação", { isAccountCreated: this.state.isAccountCreated });
         } else {
             authSection.classList.add('hidden');
             vaultContent.classList.remove('hidden');
+            lockBtn.classList.remove('hidden');
+            sidebar.classList.remove('open');
             this.loadPasswords();
+            KeyspireLogger.info("UI renderizada: cofre desbloqueado");
         }
-
-        KeyspireLogger.info("UI renderizada (Beta)");
     }
 
     attachListeners() {
         const elements = {
-            'create-btn': () => this.createAccount(),
-            'login-btn': () => this.login(),
-            'recover-btn': () => this.showRecoveryForm(),
             'lock-btn': () => this.lockVault(),
             'menu-toggle': () => this.toggleSidebar(),
+            'theme-toggle': () => this.toggleTheme(),
+            'create-btn': () => this.createAccount(),
+            'login-btn': () => this.login(),
+            'recover-btn': () => this.showRecoveryForm()
+        };
+
+        Object.entries(elements).forEach(([id, action]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.removeEventListener('click', action);
+                element.addEventListener('click', action);
+                KeyspireLogger.info(`Listener adicionado para ${id}`);
+            } else {
+                KeyspireLogger.warn(`Elemento ${id} não encontrado ao associar listener`);
+            }
+        });
+
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            const menuItems = sidebar.querySelectorAll('.menu-item');
+            if (menuItems.length > 0) {
+                menuItems.forEach(item => {
+                    const tab = item.dataset.tab;
+                    if (tab) {
+                        item.removeEventListener('click', this.switchTab.bind(this, tab));
+                        item.addEventListener('click', this.switchTab.bind(this, tab));
+                        KeyspireLogger.info(`Listener adicionado para menu-item ${tab}`);
+                    } else {
+                        KeyspireLogger.warn("Menu-item sem data-tab", { item: item.outerHTML });
+                    }
+                });
+            } else {
+                KeyspireLogger.error("Nenhum menu-item encontrado no sidebar");
+            }
+        } else {
+            KeyspireLogger.error("Sidebar não encontrado ao associar listeners");
+        }
+    }
+
+    attachVaultListeners() {
+        const elements = {
             'add-password-btn': () => this.addPassword(),
             'generate-password-btn': () => this.generateAndFillPassword(),
             'export-btn': () => this.exportVault(),
-            'import-btn': { event: 'change', callback: (e) => this.importVault(e) },
-            'theme-toggle': () => this.toggleTheme()
+            'import-btn': { event: 'change', callback: (e) => this.importVault(e) }
         };
 
         Object.entries(elements).forEach(([id, action]) => {
@@ -516,16 +568,9 @@ class Keyspire {
                 element.removeEventListener(event, callback);
                 element.addEventListener(event, callback);
                 KeyspireLogger.info(`Listener ${event} adicionado para ${id}`);
+            } else {
+                KeyspireLogger.warn(`Elemento ${id} não encontrado ao associar listener do cofre`);
             }
-        });
-
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            const tab = item.dataset.tab;
-            item.removeEventListener('click', this.switchTabBound);
-            this.switchTabBound = () => this.switchTab(tab);
-            item.addEventListener('click', this.switchTabBound);
-            KeyspireLogger.info(`Listener adicionado para menu-item ${tab}`);
         });
     }
 
@@ -585,13 +630,15 @@ class Keyspire {
                 recoveryKeySalt: btoa(String.fromCharCode(...recoveryKeySalt))
             });
             this.state.isAccountCreated = true;
+            this.state.isLocked = false;
 
             this.showNotification(`Conta criada! Guarde esta frase de recuperação: "${recoveryPhrase}"`, "success", true);
             this.renderUI();
-            this.attachListeners();
-            document.getElementById('masterPassword').value = '';
+            const masterPasswordInput = document.getElementById('masterPassword');
+            if (masterPasswordInput) masterPasswordInput.value = '';
         } catch (e) {
             this.showNotification(`Erro ao criar conta: ${e.message}`, "error", true);
+            KeyspireLogger.error("Erro ao criar conta", { message: e.message });
         }
     }
 
@@ -621,7 +668,6 @@ class Keyspire {
             this.state.loginAttempts = 0;
             this.resetInactivityTimer();
             this.renderUI();
-            this.attachListeners();
             this.showNotification("Cofre aberto com sucesso!", "success");
         } catch (e) {
             this.state.loginAttempts++;
@@ -629,6 +675,7 @@ class Keyspire {
                 await new Promise(resolve => setTimeout(resolve, 30000));
             }
             this.showNotification(`Erro ao entrar: ${e.message}`, "error", true);
+            KeyspireLogger.error("Erro ao logar", { message: e.message });
         }
     }
 
@@ -654,15 +701,12 @@ class Keyspire {
                         <label><input type="checkbox" id="pw-upper" checked> Maiúsculas</label>
                         <label><input type="checkbox" id="pw-numbers" checked> Números</label>
                         <label><input type="checkbox" id="pw-special" checked> Símbolos</label>
-                        <label><input type="checkbox" id="pw-memorable"> Memorizável</label>
                         <button id="generate-password-btn" class="btn-secondary">Gerar Senha</button>
                     </div>
                     <button id="add-password-btn" class="btn-primary">Adicionar Senha</button>
                 </div>
                 <ul id="password-list"></ul>
             `;
-            this.attachListeners();
-            KeyspireLogger.info("Formulário de senhas renderizado");
 
             const list = document.getElementById('password-list');
             if (!list) {
@@ -684,14 +728,13 @@ class Keyspire {
                             ${sanitizeHTML(category)} - ${sanitizeHTML(name)} - ${sanitizeHTML(username)} - ${'•'.repeat(password.length || 12)}
                             ${totpSecret ? ` | TOTP: <span class="totp-code">${totpCode}</span>` : ''}
                         </span>
-                        <button class="toggle-pw" aria-label="Mostrar senha">👁️</button>
-                        <button class="copy-pw" aria-label="Copiar senha">📋</button>
-                        <button class="delete-pw" aria-label="Excluir senha">🗑️</button>
+                        <button class="toggle-pw">👁️</button>
+                        <button class="copy-pw">📋</button>
+                        <button class="delete-pw">🗑️</button>
                     `;
                     item.querySelector('.toggle-pw').addEventListener('click', () => this.togglePassword(idx));
                     item.querySelector('.copy-pw').addEventListener('click', () => this.copyPassword(item.querySelector('.password-info')));
                     item.querySelector('.delete-pw').addEventListener('click', () => this.deletePassword(entry.id));
-                    KeyspireLogger.info(`Senha ${idx} adicionada à lista`);
                     return item;
                 } catch (e) {
                     item.textContent = "Erro ao descriptografar: " + e.message;
@@ -701,8 +744,11 @@ class Keyspire {
 
             const items = await Promise.all(itemsPromises);
             items.forEach(item => list.appendChild(item));
+            this.attachVaultListeners();
+            KeyspireLogger.info("Senhas carregadas com sucesso");
         } catch (e) {
             this.showNotification("Erro ao carregar senhas: " + e.message, "error");
+            KeyspireLogger.error("Erro ao carregar senhas", { message: e.message });
         }
     }
 
@@ -735,21 +781,22 @@ class Keyspire {
                             <span class="password-info" data-password="${sanitizeHTML(password)}">
                                 ${sanitizeHTML(category)} - ${sanitizeHTML(name)} - ${sanitizeHTML(username)} - ${'•'.repeat(password.length || 12)} (Excluído em: ${sanitizeHTML(deletedAt)})
                             </span>
-                            <button class="restore-pw" aria-label="Restaurar senha">↩️</button>
-                            <button class="delete-perm" aria-label="Excluir permanentemente">❌</button>
+                            <button class="restore-pw">↩️</button>
+                            <button class="delete-perm">❌</button>
                         `;
                         item.querySelector('.restore-pw').addEventListener('click', () => this.restorePassword(entry.deletedAt));
                         item.querySelector('.delete-perm').addEventListener('click', () => this.deletePermanently(entry.deletedAt));
                         list.appendChild(item);
-                        KeyspireLogger.info(`Item ${idx} da lixeira adicionado à lista`);
                     })
                     .catch(e => {
                         item.textContent = "Erro ao descriptografar: " + e.message;
                         list.appendChild(item);
                     });
             });
+            KeyspireLogger.info("Lixeira carregada com sucesso");
         } catch (e) {
             this.showNotification("Erro ao carregar lixeira: " + e.message, "error");
+            KeyspireLogger.error("Erro ao carregar lixeira", { message: e.message });
         }
     }
 
@@ -781,9 +828,10 @@ class Keyspire {
             document.getElementById('save-timeout-btn')?.addEventListener('click', () => this.saveLockTimeout());
             document.getElementById('generate-sync-qr')?.addEventListener('click', () => this.generateSyncQR());
             document.getElementById('process-sync-qr')?.addEventListener('click', () => this.processSyncQR());
-            KeyspireLogger.info("Configurações renderizadas");
+            KeyspireLogger.info("Configurações carregadas com sucesso");
         } catch (e) {
             this.showNotification("Erro ao carregar configurações: " + e.message, "error");
+            KeyspireLogger.error("Erro ao carregar configurações", { message: e.message });
         }
     }
 
@@ -821,20 +869,6 @@ class Keyspire {
     }
 
     generatePassword(length, options) {
-        if (options.memorable) {
-            const words = ["maçã", "banana", "gato", "cão", "elefante", "peixe", "uva", "cavalo", "gelo", "selva", "pipa", "leão"];
-            const randomValues = crypto.getRandomValues(new Uint32Array(Math.ceil(length / 5))); // Aproximadamente 5 caracteres por palavra
-            let password = Array.from(randomValues)
-                .map(x => words[x % words.length])
-                .join("-")
-                .slice(0, length);
-            if (password.length < length) {
-                password += crypto.getRandomValues(new Uint32Array(1))[0].toString(36).slice(0, length - password.length);
-            }
-            KeyspireLogger.info(`Senha memorizável gerada: ${password}`);
-            return password;
-        }
-
         const lower = 'abcdefghijklmnopqrstuvwxyz';
         const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const numbers = '0123456789';
@@ -858,7 +892,7 @@ class Keyspire {
         if (options.numbers && !/[0-9]/.test(password)) password = password.slice(0, -1) + numbers[Math.floor(Math.random() * numbers.length)];
         if (options.special && !/[!@#$%^&*]/.test(password)) password = password.slice(0, -1) + special[Math.floor(Math.random() * special.length)];
 
-        KeyspireLogger.info(`Senha gerada: ${password}`);
+        KeyspireLogger.info(`Senha gerada com sucesso`);
         return password;
     }
 
@@ -868,11 +902,10 @@ class Keyspire {
             const options = {
                 upper: document.getElementById('pw-upper')?.checked ?? true,
                 numbers: document.getElementById('pw-numbers')?.checked ?? true,
-                special: document.getElementById('pw-special')?.checked ?? true,
-                memorable: document.getElementById('pw-memorable')?.checked ?? false
+                special: document.getElementById('pw-special')?.checked ?? true
             };
-            if (!options.upper && !options.numbers && !options.special && !options.memorable) {
-                throw new Error("Ative pelo menos uma opção (maiúsculas, números, símbolos ou memorizável)");
+            if (!options.upper && !options.numbers && !options.special) {
+                throw new Error("Ative pelo menos uma opção (maiúsculas, números ou símbolos)");
             }
             const passwordField = document.getElementById('password-value');
             if (passwordField) {
@@ -911,6 +944,7 @@ class Keyspire {
             });
         } catch (e) {
             this.showNotification(`Erro ao adicionar senha: ${e.message}`, "error");
+            KeyspireLogger.error("Erro ao adicionar senha", { message: e.message });
         }
     }
 
@@ -952,7 +986,6 @@ class Keyspire {
             this.db.cache.passwords = null;
             this.showNotification("Senha movida para a lixeira!", "success");
             await this.loadPasswords();
-            this.attachListeners();
         } catch (e) {
             this.showNotification("Erro ao excluir senha: " + e.message, "error");
         }
@@ -1136,10 +1169,9 @@ class Keyspire {
 
             this.showNotification("Senha redefinida com sucesso! Use a nova senha para entrar.", "success", true);
             this.renderUI();
-            this.attachListeners();
         } catch (e) {
             this.showNotification(`Erro na recuperação: ${e.message}`, "error", true);
-            KeyspireLogger.error(`Falha na recuperação: ${e.message}`);
+            KeyspireLogger.error(`Falha na recuperação`, { message: e.message });
         }
     }
 
@@ -1148,37 +1180,45 @@ class Keyspire {
         this.state.masterKey = null;
         clearTimeout(this.state.inactivityTimer);
         this.renderUI();
-        this.attachListeners();
         this.showNotification("Cofre bloqueado!", "success");
+        KeyspireLogger.info("Cofre bloqueado");
     }
 
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         if (sidebar) {
             sidebar.classList.toggle('open');
-            KeyspireLogger.info("Menu lateral alternado");
+            KeyspireLogger.info("Sidebar alternado", { isOpen: sidebar.classList.contains('open') });
         } else {
-            KeyspireLogger.warn("Sidebar não encontrado");
+            KeyspireLogger.error("Sidebar não encontrado");
         }
     }
 
     switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         const tabContent = document.getElementById(`${tab}-tab`);
-        if (tabContent) {
-            tabContent.classList.remove('hidden');
-            KeyspireLogger.info(`Aba ${tab} exibida`);
+        if (!tabContent) {
+            KeyspireLogger.error(`Tab ${tab}-tab não encontrado`);
+            return;
         }
-        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-        const menuItem = document.querySelector(`.menu-item[data-tab="${tab}"]`);
-        if (menuItem) menuItem.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        tabContent.classList.remove('hidden');
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            const menuItems = sidebar.querySelectorAll('.menu-item');
+            menuItems.forEach(m => m.classList.remove('active'));
+            const menuItem = sidebar.querySelector(`.menu-item[data-tab="${tab}"]`);
+            if (menuItem) menuItem.classList.add('active');
+        }
         const currentTab = document.getElementById('current-tab');
-        if (currentTab) currentTab.textContent = tab === 'vault' ? 'Cofre' : tab === 'trash' ? 'Lixeira' : 'Configurações';
+        if (currentTab) {
+            currentTab.textContent = tab === 'vault' ? 'Cofre' : tab === 'trash' ? 'Lixeira' : 'Configurações';
+        }
         this.state.currentTab = tab;
         this.toggleSidebar();
         if (tab === 'vault') this.loadPasswords();
         else if (tab === 'trash') this.loadTrash();
         else if (tab === 'settings') this.loadSettings();
+        KeyspireLogger.info(`Aba alterada para ${tab}`);
     }
 
     resetInactivityTimer() {
@@ -1190,11 +1230,11 @@ class Keyspire {
     showNotification(message, type, persistent = false) {
         const note = document.createElement('div');
         note.className = `notification ${type}`;
-        note.innerHTML = `${sanitizeHTML(message)}<button class="close-btn" aria-label="Fechar notificação">✖</button>`;
+        note.innerHTML = `${sanitizeHTML(message)}<button class="close-btn">✖</button>`;
         document.body.appendChild(note);
         note.querySelector('.close-btn').addEventListener('click', () => note.remove());
         if (!persistent) setTimeout(() => note.remove(), 3000);
-        KeyspireLogger.info(`Notificação exibida: ${message}`);
+        KeyspireLogger.info(`Notificação exibida: ${message}`, { type });
     }
 }
 
@@ -1202,14 +1242,16 @@ class Keyspire {
 document.addEventListener('DOMContentLoaded', async () => {
     if (!window.crypto || !window.crypto.subtle) {
         alert("Este aplicativo requer um ambiente seguro (HTTPS) e suporte à Web Crypto API.");
+        KeyspireLogger.error("Web Crypto API não suportada");
         return;
     }
     try {
         const keyspire = new Keyspire();
         await keyspire.init();
         window.keyspire = keyspire;
+        KeyspireLogger.info("Keyspire inicializado com sucesso");
     } catch (e) {
-        KeyspireLogger.error("Erro ao carregar o Keyspire: " + e.message);
+        KeyspireLogger.error("Erro ao carregar o Keyspire", { message: e.message });
         alert("Erro ao carregar o Keyspire: " + e.message);
     }
 });
