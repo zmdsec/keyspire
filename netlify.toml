@@ -1,5 +1,5 @@
 [build]
-  publish = "public" # Ajuste para "." se os arquivos estão na raiz
+  publish = "." # Arquivos na raiz
 
 [[headers]]
   for = "/*"
@@ -28,7 +28,6 @@
     Content-Type = "text/html; charset=UTF-8"
     Cache-Control = "no-store, no-cache, must-revalidate, private"
     X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
     Cross-Origin-Resource-Policy = "same-origin"
 
 [[headers]]
@@ -47,13 +46,6 @@
     X-Content-Type-Options = "nosniff"
     Cross-Origin-Resource-Policy = "same-origin"
 
-[[headers]]
-  for = "/*.json|/*.toml|/*.env"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
-    Access-Control-Allow-Origin = "none"
-    Cache-Control = "no-store, no-cache, must-revalidate, private"
-
 [[redirects]]
   from = "http://keyspirezmdsec.netlify.app/*"
   to = "https://keyspirezmdsec.netlify.app/:splat"
@@ -64,4 +56,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = { "Role" = "anonymous" }
