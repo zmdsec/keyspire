@@ -1,33 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Keyspire (Beta) - Gerenciador de senhas seguro e local">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Keyspire (Beta) - Seu Cofre, Suas Regras</title>
-    <link rel="stylesheet" href="./keyspire.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Keyspire (Beta) - Gerenciador de senhas seguro e local" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Keyspire (Beta)</title>
+  <link rel="stylesheet" href="keyspire.css" />
 </head>
 <body>
-    <header>
-        <button id="menu-toggle" aria-label="Abrir menu">☰</button>
-        <h1 id="current-tab">Cofre</h1>
-        <button id="theme-toggle" aria-label="Alternar tema">🌙</button>
-        <button id="lock-btn" class="hidden" aria-label="Bloquear cofre">🔒</button>
-    </header>
-    <div id="sidebar" class="sidebar">
-        <div class="menu-item" data-tab="vault">Cofre</div>
-        <div class="menu-item" data-tab="trash">Lixeira</div>
-        <div class="menu-item" data-tab="settings">Configurações</div>
+  <header>
+    <button id="menu-toggle" aria-label="Abrir menu">☰</button>
+    <h1>Keyspire</h1>
+    <div class="header-actions">
+      <button id="theme-toggle" aria-label="Alternar tema">🌙</button>
+      <button id="lock-btn" class="hidden" aria-label="Bloquear cofre">🔒</button>
     </div>
-    <main>
-        <section id="auth-section"></section>
-        <section id="vault-content" class="hidden">
-            <div id="vault-tab" class="tab-content"></div>
-            <div id="trash-tab" class="tab-content hidden"></div>
-            <div id="settings-tab" class="tab-content hidden"></div>
-        </section>
-    </main>
-    <script src="./keyspire.js"></script>
+  </header>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="menu-item active" data-tab="vault">Cofre</div>
+    <div class="menu-item" data-tab="trash">Lixeira</div>
+    <div class="menu-item" data-tab="settings">Configurações</div>
+  </aside>
+
+  <main>
+    <section id="auth-section">
+      <div class="auth-box">
+        <h2>Entrar no Cofre</h2>
+        <input type="password" id="password-input" placeholder="Digite sua senha" />
+        <div class="auth-buttons">
+          <button class="btn-primary" id="login-btn">Entrar</button>
+          <button class="btn-secondary" id="recover-btn">Recuperar</button>
+        </div>
+        <p class="beta-notice">Versão Beta — seus dados são armazenados localmente</p>
+        <p class="donation">Gostou? Considere apoiar este projeto independente</p>
+      </div>
+    </section>
+
+    <section id="vault-content" class="hidden">
+      <div id="vault-tab" class="tab-content">Seu cofre está vazio.</div>
+      <div id="trash-tab" class="tab-content hidden">Nada na lixeira.</div>
+      <div id="settings-tab" class="tab-content hidden">Configurações do sistema.</div>
+    </section>
+  </main>
+
+  <script src="keyspire.js"></script>
 </body>
-        </html>
+</html>
