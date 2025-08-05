@@ -8,7 +8,9 @@
   --border-radius: 8px;
   --success: #28a745;
   --danger: #dc3545;
+  --warning: #ffc107; /* Adicionado para notificações de aviso */
   --transition: all 0.3s ease;
+  --input-border: #ced4da; /* Adicionado para bordas de inputs */
 }
 
 body.dark-theme {
@@ -17,10 +19,23 @@ body.dark-theme {
   --card-bg: #2c2c2c;
   --primary: #1e90ff;
   --secondary: #adb5bd;
+  --input-border: #495057;
+}
+
+/* Suporte a preferência de tema do sistema */
+@media (prefers-color-scheme: dark) {
+  body:not(.dark-theme) {
+    --background: #1a1a1a;
+    --text: #e0e0e0;
+    --card-bg: #2c2c2c;
+    --primary: #1e90ff;
+    --secondary: #adb5bd;
+    --input-border: #495057;
+  }
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, Arial, sans-serif; /* Fontes modernas */
   background: var(--background);
   color: var(--text);
   margin: 0;
@@ -52,6 +67,14 @@ header {
   transition: var(--transition);
 }
 
+#menu-toggle:hover,
+#theme-toggle:hover,
+#lock-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-radius: var(--border-radius);
+}
+
 #current-tab {
   font-size: 20px;
   font-weight: bold;
@@ -76,12 +99,23 @@ header {
   left: 0;
 }
 
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .menu-item {
+  display: block;
   padding: 18px 25px;
   font-size: 16px;
   cursor: pointer;
   transition: var(--transition);
   word-break: break-word;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
 }
 
 .menu-item:hover,
@@ -110,8 +144,18 @@ section {
   display: none !important;
 }
 
+.auth-box {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
 .password-form,
-.auth-buttons {
+.auth-buttons,
+#settings-form {
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -119,16 +163,39 @@ section {
   margin: 20px 0;
 }
 
+#settings-form label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+}
+
+#settings-form select {
+  padding: 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  color: var(--text);
+}
+
 input[type="password"],
 input[type="text"],
-input[type="email"] {
+input[type="email"],
+input[type="file"] { /* Adicionado suporte a input de arquivo */
   padding: 12px;
   font-size: 15px;
-  border: 1px solid var(--secondary);
+  border: 1px solid var(--input-border);
   border-radius: var(--border-radius);
   width: 100%;
   background: var(--card-bg);
   color: var(--text);
+  box-sizing: border-box;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
 button {
@@ -154,6 +221,11 @@ button:hover {
   opacity: 0.9;
 }
 
+button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
 .password-item {
   background: var(--card-bg);
   box-shadow: var(--shadow);
@@ -170,6 +242,20 @@ button:hover {
   transform: translateY(-2px);
 }
 
+#password-list,
+#trash-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.error-message {
+  color: var(--danger);
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
 .notification {
   position: fixed;
   top: 20px;
@@ -178,6 +264,7 @@ button:hover {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   z-index: 1000;
+  font-size: 14px;
 }
 
 .notification.success {
@@ -188,6 +275,11 @@ button:hover {
 .notification.error {
   background: var(--danger);
   color: white;
+}
+
+.notification.warning {
+  background: var(--warning);
+  color: var(--text);
 }
 
 .close-btn {
@@ -206,14 +298,35 @@ button:hover {
   text-align: center;
 }
 
+.donation a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.donation a:hover {
+  text-decoration: underline;
+}
+
 #qrcode {
-  margin: 15px 0;
+  margin: 20px 0;
   text-align: center;
 }
 
 #qrcode canvas {
-  border: 1px solid var(--secondary);
+  border: 1px solid var(--input-border);
   border-radius: var(--border-radius);
+  max-width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 @media (max-width: 768px) {
@@ -228,5 +341,20 @@ button:hover {
 
   .sidebar.open {
     left: 0;
+  }
+
+  .auth-box {
+    max-width: 100%;
+  }
+
+  input[type="password"],
+  input[type="text"],
+  input[type="email"],
+  input[type="file"] {
+    font-size: 16px; /* Aumenta tamanho para toque */
+  }
+
+  button {
+    font-size: 16px;
   }
 }
